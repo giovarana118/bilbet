@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bilancio Betting</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bilancio">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eef1f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c1117" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: una colonna da telefono (max 720px), tabellone del bilancio in alto, barra in basso con il + al centro */
+  --bg:#eef1f5;
+  --card:#ffffff;
+  --ink:#111a25;
+  --muted:#5b6878;
+  --line:#dce2ea;
+  --accent:#2346c4;
+  --accent-soft:#e5eafb;
+  --accent-ink:#ffffff;
+  --win:#11804c; --win-bg:#e1f3e8;
+  --loss:#c42f38; --loss-bg:#fbe4e5;
+  --open:#9a6208; --open-bg:#fcefd6;
+  --hero-bg:#111a25; --hero-ink:#f3f6fa; --hero-muted:#9fb0c3; --hero-win:#5fd49b; --hero-loss:#ff8a90; --hero-line:#2a3646;
+  --font-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --font-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --radius:14px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1117; --card:#151d27; --ink:#e8eef5; --muted:#93a3b5; --line:#253141;
+    --accent:#7f98ff; --accent-soft:#1d2849; --accent-ink:#0c1117;
+    --win:#4cc98b; --win-bg:#10301f; --loss:#ff7d83; --loss-bg:#3b171a; --open:#e8b552; --open-bg:#382a0e;
+    --hero-bg:#1a2432; --hero-ink:#f3f6fa; --hero-muted:#9fb0c3; --hero-win:#5fd49b; --hero-loss:#ff8a90; --hero-line:#2c3a4d;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1117; --card:#151d27; --ink:#e8eef5; --muted:#93a3b5; --line:#253141;
+  --accent:#7f98ff; --accent-soft:#1d2849; --accent-ink:#0c1117;
+  --win:#4cc98b; --win-bg:#10301f; --loss:#ff7d83; --loss-bg:#3b171a; --open:#e8b552; --open-bg:#382a0e;
+  --hero-bg:#1a2432; --hero-ink:#f3f6fa; --hero-muted:#9fb0c3; --hero-win:#5fd49b; --hero-loss:#ff8a90; --hero-line:#2c3a4d;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.4;
+  font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 120px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;letter-spacing:.01em}
+h2{font-size:22px;font-weight:700}
+h3{font-size:18px;font-weight:600}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.pos{color:var(--win)} .neg{color:var(--loss)} .zero{color:var(--muted)}
+
+/* barra in alto */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0 10px}
+.top h1{font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.top h1 span{color:var(--accent)}
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;
+  border:1px solid var(--line);background:var(--card)}
+.iconbtn svg{width:20px;height:20px}
+
+/* avvisi */
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  background:var(--open-bg);color:var(--ink);border:1px solid color-mix(in srgb,var(--open) 35%,transparent);
+  border-radius:var(--radius);padding:12px 14px;margin:0 0 12px;font-size:14px}
+.banner.info{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.banner b{font-weight:600}
+
+/* tabellone */
+.hero{background:var(--hero-bg);color:var(--hero-ink);border-radius:18px;padding:18px 18px 14px;margin-bottom:12px}
+.hero .lab{font-size:13px;color:var(--hero-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.hero .big{font-family:var(--font-display);font-weight:700;font-size:clamp(48px,14vw,72px);line-height:1;margin:6px 0 4px;letter-spacing:-.01em}
+.hero .big.pos{color:var(--hero-win)} .hero .big.neg{color:var(--hero-loss)} .hero .big.zero{color:var(--hero-ink)}
+.hero .sub{color:var(--hero-muted);font-size:14px}
+.board{display:grid;grid-template-columns:repeat(3,1fr);margin-top:14px;border-top:1px solid var(--hero-line)}
+.board div{padding:10px 8px 2px;border-left:1px solid var(--hero-line)}
+.board div:first-child{border-left:0;padding-left:0}
+.board span{display:block;font-size:12px;color:var(--hero-muted);text-transform:uppercase;letter-spacing:.06em}
+.board b{display:block;font-family:var(--font-display);font-size:24px;font-weight:600;margin-top:2px}
+.board b.pos{color:var(--hero-win)} .board b.neg{color:var(--hero-loss)}
+
+/* filtri */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:14px;font-weight:500;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+/* schede */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.card-h .small{text-align:right}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+@media (min-width:560px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.tile{background:var(--card);padding:11px 12px}
+.tile span{display:block;font-size:12.5px;color:var(--muted)}
+.tile b{display:block;font-family:var(--font-display);font-size:24px;font-weight:600;line-height:1.15;margin-top:2px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:0;margin:0}
+.kv dt,.kv dd{margin:0;padding:8px 0;border-bottom:1px solid var(--line)}
+.kv dt{color:var(--muted);font-size:14.5px}
+.kv dd{text-align:right;font-weight:600}
+.kv dt:last-of-type,.kv dd:last-of-type{border-bottom:0}
+.kv .strong{color:var(--ink);font-weight:600}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--win);border-radius:99px}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0}
+
+/* elenchi */
+.list{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:none;border:0;
+  border-bottom:1px solid var(--line);padding:11px 0}
+.row:last-child{border-bottom:0}
+.row-main{min-width:0;flex:1}
+.row-t{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-t small{font-weight:500;color:var(--muted)}
+.row-m{display:block;font-size:13.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-s{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none}
+.amt{font-family:var(--font-display);font-weight:600;font-size:19px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--ink)}
+.pill.win{background:var(--win-bg);color:var(--win)} .pill.loss{background:var(--loss-bg);color:var(--loss)}
+.pill.open{background:var(--open-bg);color:var(--open)} .pill.acc{background:var(--accent-soft);color:var(--accent)}
+.pill.ex{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.day{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:14px 0 2px}
+.open-bet{border-bottom:1px solid var(--line);padding:10px 0}
+.open-bet:last-child{border-bottom:0}
+.open-bet .acts{display:flex;gap:8px;margin-top:8px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px;font-weight:600;font-size:15px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.win{background:var(--win-bg);border-color:transparent;color:var(--win)}
+.btn.loss{background:var(--loss-bg);border-color:transparent;color:var(--loss)}
+.btn.danger{color:var(--loss)}
+.btn.sm{padding:6px 12px;font-size:14px}
+.btn[disabled]{opacity:.5;cursor:default}
+.empty{color:var(--muted);font-size:14.5px;margin:4px 0}
+.search{width:100%;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 14px;font-size:16px;margin-bottom:10px}
+
+/* tabelle compatte */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:6px 6px;border-bottom:1px solid var(--line)}
+td{text-align:right;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+tr:last-child td{border-bottom:0}
+tfoot td{font-weight:700;border-top:1px solid var(--line)}
+
+/* schede servizi/provider */
+.ent-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ent-h .pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.ent-big{font-family:var(--font-display);font-size:34px;font-weight:700;line-height:1.05;margin:10px 0 2px}
+.grid-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px;margin-top:12px}
+@media (min-width:560px){.grid-stats{grid-template-columns:repeat(3,1fr)}}
+.grid-stats div span{display:block;font-size:12.5px;color:var(--muted)}
+.grid-stats div b{font-weight:600}
+
+/* grafico */
+.chart{position:relative;height:190px;touch-action:pan-y}
+.chart svg{display:block;width:100%;height:100%}
+.chart .tip{position:absolute;top:0;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 8px;border-radius:8px;white-space:nowrap;transform:translateX(-50%);display:none}
+
+/* barra in basso */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:20}
+.nav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:6px 8px 10px}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:11.5px;font-weight:600;padding:4px 0}
+.nav a svg{width:22px;height:22px}
+.nav a[aria-current="page"]{color:var(--accent)}
+.nav .add{justify-self:center;width:58px;height:58px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:4px solid var(--bg);
+  display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 4px 14px rgba(17,26,37,.25)}
+.nav .add svg{width:28px;height:28px}
+
+/* pannello */
+.sheet{position:fixed;inset:0;z-index:40;display:none}
+.sheet.on{display:block}
+.sheet .bd{position:absolute;inset:0;background:rgba(8,12,18,.5)}
+.sheet .pn{position:absolute;left:0;right:0;bottom:0;max-width:720px;margin:0 auto;background:var(--card);border-radius:20px 20px 0 0;
+  max-height:94%;overflow-y:auto;padding:18px 16px 28px;-webkit-overflow-scrolling:touch}
+@media (prefers-reduced-motion:no-preference){.sheet.on .pn{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
+.pn-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+form{display:flex;flex-direction:column;gap:12px}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:600;color:var(--muted)}
+.fld input,.fld select,.fld textarea{font-size:16px;font-weight:500;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;min-width:0}
+.fld select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.g2>*{min-width:0}
+.fld input[type=date]{min-height:46px;-webkit-appearance:none;appearance:none}
+.row-m.wrapm{white-space:normal}
+.seg{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:7px}
+.seg legend{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:6px;padding:0}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg span{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-size:14.5px;font-weight:600;background:var(--card);color:var(--ink)}
+.seg input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.seg.esiti input[value="Vinta"]:checked+span,.seg.esiti input[value="Mezza vinta"]:checked+span{background:var(--win);border-color:var(--win);color:#fff}
+.seg.esiti input[value="Persa"]:checked+span,.seg.esiti input[value="Mezza persa"]:checked+span{background:var(--loss);border-color:var(--loss);color:#fff}
+.seg.esiti input[value="In attesa"]:checked+span{background:var(--open);border-color:var(--open);color:#fff}
+.hint{font-size:13px;color:var(--muted);font-weight:500;margin:-4px 0 0}
+.linkbtn{background:none;border:0;color:var(--accent);font-weight:600;padding:0;font-size:14px;text-align:left}
+.preview{font-family:var(--font-display);font-size:22px;font-weight:600;padding:10px 12px;border-radius:10px;background:var(--bg)}
+.preview:empty{display:none}
+.err{color:var(--loss);font-size:14px;font-weight:600;margin:0}
+.err:empty{display:none}
+.acts-row{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:4px}
+.acts-row .r{display:flex;gap:10px;margin-left:auto}
+[hidden]{display:none!important}
+
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14.5px;font-weight:600;z-index:60;display:none;max-width:calc(100% - 32px)}
+.toast.on{display:block}
+.loading{padding:40px 0;text-align:center;color:var(--muted)}
+.tagrow{display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px;font-size:14px}
+.tag button{border:0;background:var(--bg);border-radius:50%;width:24px;height:24px;line-height:1;color:var(--muted)}
+.inline{display:flex;gap:8px;margin-top:10px}
+.inline input{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-size:16px;min-width:0}
+.howto p{margin:0 0 8px;font-size:14.5px}
+.howto b{font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Bilancio <span>Betting</span></h1>
+    <a class="iconbtn" href="#altro" aria-label="Impostazioni e altro" title="Impostazioni e altro">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </a>
+  </header>
+  <div id="banners"></div>
+  <main id="view"><div class="loading">Carico i tuoi dati…</div></main>
+</div>
+
+<nav class="nav" aria-label="Sezioni">
+  <div class="nav-in">
+    <a href="#riepilogo" data-nav="riepilogo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>Riepilogo</a>
+    <a href="#movimenti" data-nav="movimenti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Movimenti</a>
+    <button class="add" type="button" data-act="add" aria-label="Aggiungi movimento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <a href="#servizi" data-nav="servizi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 20V10"/></svg>Servizi</a>
+    <a href="#provider" data-nav="provider"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/></svg>Provider</a>
+  </div>
+</nav>
+
+<div class="sheet" id="sheet" aria-hidden="true">
+  <div class="bd" data-act="close"></div>
+  <div class="pn" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet-pn"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="imp-file" accept=".json,application/json" hidden>
+<noscript><div class="wrap"><div class="banner"><span><b>Questa app ha bisogno di JavaScript.</b> L'anteprima dei file (per esempio l'app File su iPhone) non lo esegue: apri la pagina in un browser come Chrome o Safari.</span></div></div></noscript>
+
+<script>
+(function(){
+'use strict';
+
+/* ------------------------------------------------------------------ costanti */
+const TIPI = ["Scommessa","Versamento","Prelievo","Costo servizio","Bonus","Bilancio storico","Saldo verificato","Perdita pregressa"];
+const ESITI = ["In attesa","Vinta","Persa","Mezza vinta","Mezza persa","Rimborsata","Cash out/Manuale"];
+const CLOSED = new Set(["Vinta","Persa","Mezza vinta","Mezza persa","Cash out/Manuale"]);
+const AMBITI = ["Professionale","Personale"];
+const STATI = ["Attivo","In pausa","Chiuso"];
+const RINNOVI = ["Mensile","Trimestrale","Annuale","Una tantum","Nessuno"];
+const TIPI_PROV = ["Bookmaker","Exchange","Altro"];
+const DEFAULT_SPORT = ["Calcio", "Tennis", "Formula 1 / Motori"];
+const LOCAL = true;
+const KEY = "bilancio-betting:v1";
+const SEED = null;
+const EXAMPLE_CONFIG = {};
+const EXAMPLE_BUCKETS = {};
+const DEFAULT_CONFIG = {v:1, inizioSerio:null, inizioVolume:null, providers:[],
+  servizi:[{id:"personale",nome:"Personale",ambito:"Personale",stake:null,bankroll:null,costo:0,rinnovo:"Nessuno",inizio:null,stato:"Attivo",note:""}],
+  sport:DEFAULT_SPORT.slice()};
+const IMP_LABEL = {"Versamento":"Importo versato (€)","Prelievo":"Importo prelevato (€)","Costo servizio":"Costo pagato (€)",
+  "Bonus":"Bonus ricevuto (€)","Bilancio storico":"Importo del bilancio (€)","Saldo verificato":"Saldo che vedi sul conto (€)",
+  "Perdita pregressa":"Perdita stimata (€)","Scommessa":"Incassato, stake compreso (€)"};
+
+/* ------------------------------------------------------------------ stato */
+const S = {
+  mode:"loading",           // loading | db | memory
+  db:null, downloads:null,
+  config:null,              // null = documento non ancora creato
+  buckets:new Map(),        // "2026-11" -> {id: entry}
+  known:new Set(),          // bucket esistenti (anche appena scritti)
+  entries:[],
+  gotMov:false, gotCfg:false, stale:false,
+  ui:{view:"riepilogo", amb:"tutti", period:"tutto", movf:"tutti", q:"", limit:80, delArm:null}
+};
+
+/* ------------------------------------------------------------------ utilità */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtEur = new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"});
+function eur(v, sign){ if(v==null || !isFinite(v)) return "–"; const r = Math.round(v*100)/100; const s = fmtEur.format(r === 0 ? 0 : r); return sign && r>0 ? "+"+s : s; }
+function nE(v, sign){ if(v==null||!isFinite(v)) return "–"; const r=Math.round(v*100)/100; const s=(r===0?0:r).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}); return sign&&r>0?"+"+s:s; }
+function pct(v, sign=true){ if(v==null || !isFinite(v)) return "–"; const s=(v*100).toLocaleString("it-IT",{minimumFractionDigits:1,maximumFractionDigits:1})+"%"; return sign && v>0 ? "+"+s : s; }
+function dec(v){ return (v==null||!isFinite(v)) ? "–" : v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function cls(v){ if(v==null||!isFinite(v)) return "zero"; const r=Math.round(v*100); return r>0?"pos":r<0?"neg":"zero"; }
+function num(v){ if(v==null||v==="") return null; const n = typeof v==="number" ? v : parseFloat(String(v).replace(/\s/g,"").replace(/\.(?=\d{3}(\D|$))/g,"").replace(",",".")); return isFinite(n) ? n : null; }
+const n0 = v => num(v) ?? 0;
+function pad(n){ return String(n).padStart(2,"0"); }
+function iso(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function today(){ return iso(new Date()); }
+function pdate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function dmy(s){ if(!s) return "–"; const [y,m,d]=s.split("-"); return d+"/"+m+"/"+y; }
+function dm(s){ const [y,m,d]=s.split("-"); return d+"/"+m; }
+function dayLabel(s){ return pdate(s).toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short",year:"numeric"}); }
+function monthLabel(k){ const [y,m]=k.split("-").map(Number); return new Date(y,m-1,1).toLocaleDateString("it-IT",{month:"short",year:"numeric"}); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function slug(s){ return (String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40) || "x")+"-"+Math.random().toString(36).slice(2,6); }
+function lsGet(k){ try{ return JSON.parse(localStorage.getItem("bb:"+k)); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem("bb:"+k, JSON.stringify(v)); }catch(e){} }
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),2600); }
+
+/* ------------------------------------------------------------------ calcoli */
+function cfg(){ return S.config || DEFAULT_CONFIG; }
+function serv(id){ return cfg().servizi.find(s=>s.id===id); }
+function prov(id){ return cfg().providers.find(p=>p.id===id); }
+function servName(id){ const s=serv(id); return s ? s.nome : (id ? "Servizio eliminato" : ""); }
+function provName(id){ const p=prov(id); return p ? p.nome : (id ? "Provider eliminato" : ""); }
+function ambitoOf(e){ const s=serv(e.serv); return s ? s.ambito : ""; }
+
+function pl(e){
+  const k=n0(e.stake), q=n0(e.quota), imp=n0(e.imp);
+  switch(e.tipo){
+    case "Scommessa":
+      switch(e.esito){
+        case "Vinta": return k*(Math.max(q,1)-1);
+        case "Persa": return -k;
+        case "Mezza vinta": return k*(Math.max(q,1)-1)/2;
+        case "Mezza persa": return -k/2;
+        case "Cash out/Manuale": return imp-k;
+        case "Rimborsata": return 0;
+        default: return null;
+      }
+    case "Costo servizio": case "Perdita pregressa": return -imp;
+    case "Bonus": return imp;
+    case "Bilancio storico": return imp;
+    default: return null;
+  }
+}
+const isBet = e => e.tipo==="Scommessa";
+const isOpen = e => isBet(e) && (!e.esito || e.esito==="In attesa");
+const isClosed = e => isBet(e) && CLOSED.has(e.esito);
+const isWin = e => isClosed(e) && (e.esito==="Vinta" || e.esito==="Mezza vinta" || (e.esito==="Cash out/Manuale" && pl(e)>0));
+function dNetto(e){ return ["Scommessa","Bonus","Costo servizio","Bilancio storico"].includes(e.tipo) ? (pl(e)||0) : 0; }
+function dSaldo(e){
+  switch(e.tipo){
+    case "Versamento": return n0(e.imp);
+    case "Prelievo": return -n0(e.imp);
+    case "Scommessa": case "Bonus": return pl(e)||0;
+    default: return 0;
+  }
+}
+const isCheck = e => e.tipo==="Saldo verificato" || e.tipo==="Saldo iniziale";
+function after(a,b){ return a.data>b.data || (a.data===b.data && (a.ts||0)>(b.ts||0)); }
+/* saldo di un conto: ultimo saldo verificato + movimenti successivi */
+function provSaldo(pid){
+  const l=S.entries.filter(e=>e.prov===pid);
+  let cp=null; for(const e of l){ if(isCheck(e) && (!cp || after(e,cp))) cp=e; }
+  const rest=l.filter(e=>!isCheck(e) && (!cp || after(e,cp)));
+  return {cp, verified:!!cp, saldo:(cp?n0(cp.imp):0)+sum(rest,dSaldo)};
+}
+function tracked(e){ const v=cfg().inizioVolume; return !v || e.data>=v; }
+
+/* performance sulle giocate registrate una per una */
+function perf(list){
+  let n=0,puntato=0,plb=0,bonus=0,costi=0,wins=0,qs=0,qn=0,aperte=0,inGioco=0;
+  for(const e of list){
+    if(isClosed(e)){ n++; puntato+=n0(e.stake); plb+=pl(e); if(isWin(e)) wins++; const q=n0(e.quota); if(q>0){qs+=q;qn++;} }
+    else if(isOpen(e)){ aperte++; inGioco+=n0(e.stake); }
+    else if(e.tipo==="Bonus") bonus+=n0(e.imp);
+    else if(e.tipo==="Costo servizio") costi+=n0(e.imp);
+  }
+  const netto=plb+bonus-costi;
+  return {n,puntato,pl:plb,bonus,costi,netto,aperte,inGioco,
+    roi:puntato?plb/puntato:null, roin:puntato?netto/puntato:null, win:n?wins/n:null, quota:qn?qs/qn:null, avg:n?plb/n:null};
+}
+function sum(list,f){ let s=0; for(const e of list) s+=f(e); return s; }
+function byAmb(list, amb){ return amb==="tutti" ? list : list.filter(e=>ambitoOf(e)===amb); }
+function periodStart(p){
+  const d=new Date();
+  if(p==="mese") return iso(new Date(d.getFullYear(),d.getMonth(),1));
+  if(p==="30") { const x=new Date(d); x.setDate(x.getDate()-29); return iso(x); }
+  return null;
+}
+
+/* ------------------------------------------------------------------ dati */
+function rebuild(){
+  const out=[];
+  for(const [k,items] of S.buckets){ for(const id in items){ const e=items[id]; if(e && e.data && e.tipo) out.push(Object.assign({id, bk:k}, e)); } }
+  out.sort((a,b)=> a.data<b.data?1 : a.data>b.data?-1 : (b.ts||0)-(a.ts||0));
+  S.entries=out;
+}
+const chains=new Map();
+function enqueue(path, fn){ const prev=chains.get(path)||Promise.resolve(); const next=prev.catch(()=>{}).then(fn); chains.set(path,next); return next; }
+async function retry(fn){ try{ return await fn(); }catch(e){ if(e && e.code==="unavailable"){ await new Promise(r=>setTimeout(r,400+Math.random()*600)); return fn(); } throw e; } }
+function errMsg(e){
+  const c=e&&e.code;
+  if(c==="quota_exceeded") return "L'archivio è pieno: esporta in Excel ed elimina i movimenti più vecchi.";
+  if(c==="resource_exhausted") return "Troppe operazioni in poco tempo: riprova tra qualche secondo.";
+  if(c==="revoked"||c==="not_granted"||c==="capability_disabled"||c==="capability_removed") return "Non riesco più a salvare: ricarica la pagina.";
+  if(c==="invalid_argument") return "Salvataggio rifiutato: solo il proprietario può modificare questi dati.";
+  return "Salvataggio non riuscito: controlla la connessione e riprova.";
+}
+function bucketItems(k){ return Object.assign({}, S.buckets.get(k)||{}); }
+function clean(e){ const o={}; for(const k of ["data","dal","tipo","prov","serv","sport","ev","merc","quota","stake","esito","imp","note","ts","ex"]) o[k]= e[k]===undefined||e[k]===""?null:e[k]; if(!o.ex) delete o.ex; return o; }
+
+async function putEntry(id, entry, oldBk){
+  const k=entry.data.slice(0,7), body=clean(entry);
+  if(S.mode!=="db"){ if(oldBk&&oldBk!==k){ const it=bucketItems(oldBk); delete it[id]; S.buckets.set(oldBk,it); } const it=bucketItems(k); it[id]=body; S.buckets.set(k,it); rebuild(); persist(); render(); return; }
+  if(oldBk && oldBk!==k) await removeEntry(id, oldBk, true);
+  await enqueue("mov/"+k, ()=> retry(async()=>{
+    const ref=S.db.doc("mov/"+k);
+    if(S.buckets.has(k)||S.known.has(k)) await ref.update({items:{[id]:body}});
+    else { const it=bucketItems(k); it[id]=body; await ref.set({items:it}); S.known.add(k); }
+  }));
+}
+async function removeEntry(id, k, quiet){
+  if(S.mode!=="db"){ const it=bucketItems(k); delete it[id]; S.buckets.set(k,it); rebuild(); persist(); if(!quiet) render(); return; }
+  await enqueue("mov/"+k, ()=> retry(async()=>{ const it=bucketItems(k); if(!(id in it)) return; delete it[id]; await S.db.doc("mov/"+k).set({items:it}); }));
+}
+async function saveConfig(next){
+  const c=JSON.parse(JSON.stringify(next));
+  S.config=c; render();
+  if(S.mode!=="db"){ persist(); return; }
+  await enqueue("config/main", ()=> retry(()=> S.db.doc("config/main").set(c)));
+}
+
+/* ------------------------------------------------------------------ avvio */
+async function start(){
+  window.addEventListener("hashchange", route);
+  route(true);
+  let db=null;
+  if(LOCAL){ startLocal(); return; }
+  try{ db = window.claude && window.claude.use ? await window.claude.use("db") : null; }catch(e){ db=null; }
+  try{ S.downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null; }catch(e){ S.downloads=null; }
+  if(!db){ startMemory(); return; }
+  S.db=db; S.mode="db";
+  const timer=setTimeout(()=>{ if(!S.gotMov||!S.gotCfg){ S.stale=true; S.gotMov=true; S.gotCfg=true; render(); } }, 10000);
+  const done=()=>{ if(S.gotMov&&S.gotCfg){ clearTimeout(timer); } render(); };
+  db.collection("mov").onSnapshot(snap=>{
+    S.buckets=new Map(); for(const d of snap.docs){ const data=d.data()||{}; S.buckets.set(d.id, data.items||{}); S.known.add(d.id); }
+    rebuild(); if(!snap.metadata.fromCache){ S.gotMov=true; S.stale=false; } else if(!S.gotMov && snap.size) S.gotMov=true;
+    done();
+  }, err=>{ S.gotMov=true; S.stale=true; toast("Non riesco a leggere i movimenti."); done(); });
+  db.doc("config/main").onSnapshot(snap=>{
+    S.config = snap.exists ? normCfg(snap.data()) : null;
+    if(!snap.metadata.fromCache || snap.exists) S.gotCfg=true;
+    done();
+  }, err=>{ S.gotCfg=true; done(); });
+}
+/* versione file: i dati restano nel browser di questo dispositivo */
+function storageWorks(){ try{ localStorage.setItem(KEY+":t","1"); localStorage.removeItem(KEY+":t"); return true; }catch(e){ return false; } }
+function allItems(){ const items={}; for(const [,it] of S.buckets) Object.assign(items,it); return items; }
+function persist(){
+  if(S.mode!=="local") return;
+  try{ localStorage.setItem(KEY, JSON.stringify({app:"bilancio-betting",v:1,config:S.config,items:allItems(),saved:Date.now(),lastBackup:S.lastBackup||null})); S.storageOk=true; S.dirty=true; }
+  catch(e){ S.storageOk=false; toast("Questo browser non salva: esporta un backup prima di chiudere."); }
+}
+function applyData(d){
+  S.config=normCfg(d.config); S.buckets=new Map();
+  const items=d.items||{};
+  for(const id in items){ const e=items[id]; if(!e||!e.data||!e.tipo) continue; const k=String(e.data).slice(0,7); if(!S.buckets.has(k)) S.buckets.set(k,{}); S.buckets.get(k)[id]=e; }
+  rebuild();
+}
+function startLocal(){
+  S.mode="local"; S.storageOk=storageWorks();
+  S.downloads={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Blob([data]); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=filename; a.rel="noopener"; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },2000); return {status:"saved"}; }};
+  let d=null; if(S.storageOk){ try{ d=JSON.parse(localStorage.getItem(KEY)); }catch(e){ d=null; } }
+  if(d && d.config){ applyData(d); S.lastBackup=d.lastBackup||null; S.dirty=!!(d.saved && (!d.lastBackup || d.saved>d.lastBackup+2000)); }
+  else if(SEED && SEED.config){ applyData(SEED); S.seeded=true; S.lastBackup=Date.now(); persist(); S.dirty=false; }
+  else { S.config=normCfg(DEFAULT_CONFIG); S.buckets=new Map(); rebuild(); S.fresh=true; }
+  S.gotMov=S.gotCfg=true; render();
+}
+function backupData(){ return {app:"bilancio-betting",v:1,exported:new Date().toISOString(),config:S.config||DEFAULT_CONFIG,items:allItems()}; }
+async function exportBackup(){
+  try{ await S.downloads.save({filename:"backup-bilancio-betting-"+today()+".json", data:JSON.stringify(backupData())}); S.lastBackup=Date.now(); S.dirty=false; persist(); S.dirty=false; render(); toast("Backup scaricato"); }
+  catch(e){ toast("Backup non riuscito."); }
+}
+function loadBackupText(txt){
+  let d; try{ d=JSON.parse(String(txt).trim()); }catch(e){ toast("Il testo non è un backup valido."); return false; }
+  if(!d || d.app!=="bilancio-betting" || !d.config || typeof d.items!=="object"){ toast("Questo non è un backup di Bilancio Betting."); return false; }
+  applyData(d); S.fresh=false; S.seeded=false; S.lastBackup=Date.now(); persist(); S.dirty=false; render();
+  toast("Backup caricato: "+Object.keys(d.items).length+" movimenti"); return true;
+}
+function importBackup(file){
+  const fallback=()=>{ toast("Il telefono non mi fa leggere il file: usa «Incolla backup»."); };
+  if(file && typeof file.text==="function"){ file.text().then(loadBackupText).catch(()=>{ readOld(file); }); }
+  else readOld(file);
+  function readOld(f){ try{ const r=new FileReader(); r.onload=()=>loadBackupText(r.result); r.onerror=fallback; r.readAsText(f); }catch(e){ fallback(); } }
+}
+function copyText(txt){
+  return new Promise((res,rej)=>{
+    const legacy=()=>{ try{ const ta=document.createElement("textarea"); ta.value=txt; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.top="0"; ta.style.opacity="0"; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0,txt.length); const ok=document.execCommand("copy"); ta.remove(); ok?res():rej(); }catch(e){ rej(e); } };
+    if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(txt).then(res,legacy); } else legacy();
+  });
+}
+function openPaste(){
+  openSheet(`<div class="pn-h"><h2 id="sheet-title">Incolla backup</h2><button class="iconbtn" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <form id="f-paste"><label class="fld">Testo del backup<textarea id="paste-txt" rows="8" placeholder='{"app":"bilancio-betting", ...}' style="font-size:14px"></textarea></label>
+    <p class="hint">Incolla qui il testo copiato con «Copia backup». Sostituisce i dati attuali.</p>
+    <div class="acts-row"><div class="r"><button type="button" class="btn" data-act="close">Annulla</button><button type="submit" class="btn pri">Carica</button></div></div></form>`,
+  pn=>{ pn.querySelector("#f-paste").addEventListener("submit",ev=>{ ev.preventDefault(); if(loadBackupText(pn.querySelector("#paste-txt").value)) closeSheet(); }); });
+}
+function startMemory(){
+  S.mode="memory"; S.config=normCfg(EXAMPLE_CONFIG);
+  S.buckets=new Map(Object.entries(JSON.parse(JSON.stringify(EXAMPLE_BUCKETS))));
+  rebuild(); S.gotMov=S.gotCfg=true; render();
+}
+function normCfg(c){
+  const d=JSON.parse(JSON.stringify(c||{}));
+  d.providers=Array.isArray(d.providers)?d.providers:[]; d.servizi=Array.isArray(d.servizi)?d.servizi:[];
+  d.sport=Array.isArray(d.sport)&&d.sport.length?d.sport:DEFAULT_SPORT.slice();
+  return d;
+}
+function route(first){
+  const h=(location.hash||"").replace("#","");
+  const v=["riepilogo","movimenti","servizi","provider","altro"].includes(h)?h:"riepilogo";
+  S.ui.view=v; S.ui.delArm=null;
+  document.querySelectorAll("[data-nav]").forEach(a=>a.setAttribute("aria-current", a.dataset.nav===v?"page":"false"));
+  if(first!==true) { render(); window.scrollTo(0,0); }
+}
+
+/* ------------------------------------------------------------------ render */
+function render(){
+  const ready = S.gotMov && S.gotCfg;
+  renderBanners();
+  if(!ready){ $("#view").innerHTML='<div class="loading">Carico i tuoi dati…</div>'; return; }
+  const v=S.ui.view;
+  $("#view").innerHTML = v==="movimenti"?vMov() : v==="servizi"?vServ() : v==="provider"?vProv() : v==="altro"?vAltro() : vRie();
+  if(v==="riepilogo") drawChart();
+}
+function renderBanners(){
+  let h="";
+  if(S.mode==="local"){
+    if(!S.storageOk) h+='<div class="banner"><span><b>Questo browser non salva i dati.</b> Le modifiche si perdono chiudendo la pagina: esporta un backup prima di uscire, oppure apri il file in Chrome o Safari.</span><button class="btn sm" data-act="backup">Esporta backup</button></div>';
+    if(S.seeded) h+='<div class="banner info"><span><b>Dati caricati dal file, aggiornati al 02/11/2026.</b> Se rivedi questo messaggio ogni volta che apri il file, il telefono non sta conservando le modifiche: dimmelo e troviamo un altro modo.</span></div>';
+    if(S.fresh && !S.entries.length) h+='<div class="banner info"><span><b>Primo avvio.</b> Importa il file di backup con i tuoi dati, oppure inizia da zero.</span><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="import">Importa file</button><button class="btn sm" data-act="paste-backup">Incolla backup</button></span></div>';
+    else if(S.entries.length && S.dirty && (!S.lastBackup || Date.now()-S.lastBackup>7*864e5)) h+=`<div class="banner"><span><b>${S.lastBackup?"Ultimo backup "+Math.floor((Date.now()-S.lastBackup)/864e5)+" giorni fa.":"Non hai ancora fatto un backup."}</b> I dati sono solo su questo telefono: salvane una copia.</span><button class="btn sm" data-act="backup">Esporta backup</button></div>`;
+  }
+  if(S.mode==="memory") h+='<div class="banner info"><span><b>Anteprima senza archivio.</b> Qui le modifiche non vengono salvate: apri la pagina dal link su claude.ai, con il tuo account.</span></div>';
+  if(S.stale) h+='<div class="banner"><span>Non riesco a raggiungere l\'archivio: i dati potrebbero non essere aggiornati.</span></div>';
+  const ex=S.entries.some(e=>e.ex)||cfg().servizi.some(s=>s.ex);
+  if(ex && S.ui.view!=="altro") h+='<div class="banner"><span><b>Stai vedendo dati di esempio.</b> Quando vuoi iniziare con i tuoi, eliminali.</span><button class="btn sm" data-act="del-ex">Elimina esempi</button></div>';
+  $("#banners").innerHTML=h;
+}
+function chip(act, val, label, cur){ return `<button class="chip" data-act="${act}" data-v="${esc(val)}" aria-pressed="${val===cur}">${esc(label)}</button>`; }
+function ambLabel(a){ return a==="tutti"?"Tutto":a; }
+
+function vRie(){
+  const c=cfg(), u=S.ui, all=byAmb(S.entries,u.amb);
+  const nettoTot=sum(all,dNetto);
+  const storico=all.filter(e=>e.tipo==="Bilancio storico");
+  const storTot=sum(storico,e=>pl(e)||0);
+  const tr=all.filter(e=>tracked(e)&&e.tipo!=="Bilancio storico");
+  const ps=periodStart(u.period);
+  const P=perf(ps?tr.filter(e=>e.data>=ps):tr);
+  const Ptr=perf(tr);
+  const volLab = c.inizioVolume ? "dal "+dmy(c.inizioVolume) : "tutte le giocate";
+  const perLab = u.period==="mese"?"questo mese":u.period==="30"?"ultimi 30 giorni":volLab;
+  let h=`<section class="hero" aria-label="Bilancio netto">
+    <div class="lab">Bilancio netto${c.inizioSerio?" dal "+dmy(c.inizioSerio):""}${u.amb!=="tutti"?" · "+esc(u.amb):""}</div>
+    <div class="big ${cls(nettoTot)}">${eur(nettoTot,true)}</div>
+    <div class="sub">${storico.length?`Storico senza dettaglio ${eur(storTot,true)} · registrato ${volLab} ${eur(Ptr.netto,true)}`:`ROI netto ${pct(Ptr.roin)} su ${eur(Ptr.puntato)} giocati`}</div>
+    <div class="board">
+      <div><span>ROI netto</span><b class="${cls(Ptr.roin)}">${pct(Ptr.roin)}</b></div>
+      <div><span>Giocato</span><b>${eur(Ptr.puntato)}</b></div>
+      <div><span>In gioco</span><b>${eur(Ptr.inGioco)}</b></div>
+    </div>
+  </section>
+  <div class="chips" role="group" aria-label="Ambito">${["tutti",...AMBITI].map(a=>chip("amb",a,ambLabel(a),u.amb)).join("")}</div>`;
+
+  /* giocate aperte */
+  const open=all.filter(isOpen);
+  h+=`<section class="card"><div class="card-h"><h2>Giocate aperte</h2><span class="small muted">${open.length?open.length+" · "+eur(sum(open,e=>n0(e.stake)))+" in gioco":""}</span></div>`;
+  h+= open.length ? open.slice(0,8).map(e=>{
+      const pot=n0(e.stake)*(Math.max(n0(e.quota),1)-1);
+      return `<div class="open-bet"><div class="row-t">${esc(e.ev||"Scommessa")} <small>${esc(e.merc||"")}</small></div>
+      <div class="row-m">${esc([servName(e.serv),provName(e.prov)].filter(Boolean).join(" · "))} · @${dec(num(e.quota))} · stake ${eur(n0(e.stake))} · vincita possibile ${eur(pot,true)}</div>
+      <div class="acts"><button class="btn sm win" data-act="settle" data-id="${e.id}" data-v="Vinta">Vinta</button><button class="btn sm loss" data-act="settle" data-id="${e.id}" data-v="Persa">Persa</button><button class="btn sm" data-act="edit" data-id="${e.id}">Altro esito…</button></div></div>`;
+    }).join("") : `<p class="empty">Nessuna giocata aperta. Quando registri una scommessa «In attesa» la chiudi da qui con un tocco.</p>`;
+  h+=`</section>`;
+
+  /* volume */
+  h+=`<section class="card"><div class="card-h"><h2>Volume registrato</h2><span class="small muted">${esc(perLab)}</span></div>
+  <div class="chips" role="group" aria-label="Periodo">${chip("period","tutto",c.inizioVolume?"Dal "+dm(c.inizioVolume):"Tutto",u.period)}${chip("period","mese","Questo mese",u.period)}${chip("period","30","Ultimi 30 giorni",u.period)}</div>
+  <div class="tiles">
+    <div class="tile"><span>Giocato</span><b>${eur(P.puntato)}</b></div>
+    <div class="tile"><span>Profitto scommesse</span><b class="${cls(P.pl)}">${eur(P.pl,true)}</b></div>
+    <div class="tile"><span>ROI lordo</span><b class="${cls(P.roi)}">${pct(P.roi)}</b></div>
+    <div class="tile"><span>Costi servizi</span><b class="${cls(-P.costi)}">${eur(-P.costi)}</b></div>
+    <div class="tile"><span>Bonus</span><b>${eur(P.bonus)}</b></div>
+    <div class="tile"><span>Netto</span><b class="${cls(P.netto)}">${eur(P.netto,true)}</b></div>
+    <div class="tile"><span>ROI netto</span><b class="${cls(P.roin)}">${pct(P.roin)}</b></div>
+    <div class="tile"><span>Giocate chiuse</span><b>${P.n}</b></div>
+    <div class="tile"><span>% vinte</span><b>${pct(P.win,false)}</b></div>
+    <div class="tile"><span>Quota media</span><b>${dec(P.quota)}</b></div>
+    <div class="tile"><span>Profitto medio</span><b class="${cls(P.avg)}">${eur(P.avg,true)}</b></div>
+    <div class="tile"><span>Stake medio</span><b>${eur(P.n?P.puntato/P.n:null)}</b></div>
+  </div>
+  <p class="note">ROI lordo = profitto scommesse ÷ giocato. ROI netto = (profitto + bonus − costi) ÷ giocato. I bilanci storici non entrano nel ROI perché non hanno volume.</p></section>`;
+
+  /* grafico */
+  h+=`<section class="card"><div class="card-h"><h2>Andamento del bilancio</h2><span class="small muted">cumulato${u.amb!=="tutti"?" · "+esc(u.amb):""}</span></div><div class="chart" id="chart"></div></section>`;
+
+  /* per sport */
+  const sports=new Map();
+  for(const e of all){ if(!(e.tipo==="Scommessa"||e.tipo==="Bilancio storico")) continue; const k=e.sport||"Vari sport"; if(!sports.has(k)) sports.set(k,[]); sports.get(k).push(e); }
+  const sp=[...sports.entries()].map(([k,l])=>{ const st=sum(l.filter(e=>e.tipo==="Bilancio storico"),e=>pl(e)||0); const p=perf(l.filter(isBet)); return {k,st,p,tot:st+p.pl}; }).sort((a,b)=>b.tot-a.tot);
+  h+=`<section class="card"><div class="card-h"><h2>Per sport</h2><span class="small muted">profitto scommesse, senza costi</span></div>`;
+  h+= sp.length ? `<div class="list">${sp.map(r=>{
+      const bits=[]; if(r.st) bits.push("storico "+eur(r.st,true)); if(r.p.n) bits.push(`registrato ${eur(r.p.pl,true)} su ${eur(r.p.puntato)} giocati · ROI ${pct(r.p.roi)}`);
+      return `<div class="row"><span class="row-main"><span class="row-t">${esc(r.k)}</span><span class="row-m wrapm">${esc(bits.join(" · "))||"&nbsp;"}</span></span><span class="row-s"><span class="amt ${cls(r.tot)}">${eur(r.tot,true)}</span></span></div>`; }).join("")}</div>` : `<p class="empty">Ancora nessuna scommessa o bilancio storico.</p>`;
+  h+=`</section>`;
+
+  /* mesi */
+  const months=new Map();
+  for(const e of all){ if(e.tipo==="Perdita pregressa") continue; const k=e.data.slice(0,7); if(!months.has(k)) months.set(k,[]); months.get(k).push(e); }
+  const ms=[...months.keys()].sort().reverse().slice(0,12);
+  h+=`<section class="card"><div class="card-h"><h2>Per mese</h2><span class="small muted">ultimi 12 mesi</span></div>`;
+  h+= ms.length ? `<div class="tbl-wrap"><table><thead><tr><th>Mese</th><th>Giocato €</th><th>Netto €</th><th>ROI</th></tr></thead><tbody>${
+    ms.map(k=>{ const l=months.get(k); const p=perf(l); const net=sum(l,dNetto); const st=sum(l.filter(e=>e.tipo==="Bilancio storico"),e=>pl(e)||0);
+      return `<tr><td>${esc(monthLabel(k))}${st?' <span class="pill acc">storico</span>':""}</td><td>${p.puntato?nE(p.puntato):"–"}</td><td class="${cls(net)}"><b>${nE(net,true)}</b></td><td class="${cls(p.roin)}">${pct(p.roin)}</td></tr>`; }).join("")
+  }</tbody></table></div><p class="note">I bilanci storici compaiono nel mese della loro data di fine periodo.</p>` : `<p class="empty">Nessun movimento ancora.</p>`;
+  h+=`</section>`;
+
+  /* liquidità (sempre tutto, non filtrata per ambito) */
+  const E=S.entries;
+  const versato=sum(E.filter(e=>e.tipo==="Versamento"),e=>n0(e.imp)), prelevato=sum(E.filter(e=>e.tipo==="Prelievo"),e=>n0(e.imp));
+  const inG=sum(E.filter(isOpen),e=>n0(e.stake));
+  const pr=cfg().providers.map(p=>({p,s:provSaldo(p.id),g:sum(E.filter(e=>e.prov===p.id&&isOpen(e)),e=>n0(e.stake))}));
+  const ver=pr.filter(x=>x.s.verified);
+  const salVer=sum(ver,x=>x.s.saldo), dispVer=sum(ver,x=>x.s.saldo-x.g);
+  const atteso=versato-prelevato+sum(E,e=>["Scommessa","Bonus","Bilancio storico"].includes(e.tipo)?(pl(e)||0):0);
+  h+=`<section class="card"><div class="card-h"><h2>Soldi sui conti</h2><span class="small muted">tutti i provider</span></div><dl class="kv">
+    <dt>Versato</dt><dd>${eur(versato)}</dd>
+    <dt>Prelevato</dt><dd>${eur(prelevato)}</dd>
+    <dt class="strong">Versato netto (soldi tuoi ancora dentro)</dt><dd>${eur(versato-prelevato)}</dd>
+    <dt>Saldo atteso dai bilanci</dt><dd>${eur(atteso)}</dd>
+    <dt class="strong">Saldo verificato sui conti</dt><dd>${ver.length?eur(salVer):"da verificare"}</dd>
+    ${ver.length?`<dt>Disponibile sui conti verificati</dt><dd>${eur(dispVer)}</dd>`:""}
+    <dt>In gioco ora</dt><dd>${eur(inG)}</dd>
+  </dl><p class="note">Saldo atteso = versato − prelevato + profitti di scommesse e bilanci storici + bonus (i costi dei servizi li paghi fuori dai conti). ${ver.length?`Conti verificati: ${ver.length} su ${pr.length}.`:"Nessun conto verificato: per ogni conto aggiungi un «Saldo verificato» con quanto vedi sul sito."} Se la somma dei saldi reali è molto diversa dal saldo atteso, manca qualche movimento.</p></section>`;
+
+  /* storico */
+  const preg=sum(E.filter(e=>e.tipo==="Perdita pregressa"),e=>n0(e.imp));
+  const nettoAll=sum(E,dNetto);
+  const rec = preg>0 ? Math.max(0,Math.min(1,nettoAll/preg)) : null;
+  h+=`<section class="card"><div class="card-h"><h2>Prima e dopo</h2><span class="small muted">${c.inizioSerio?"inizio serio "+dmy(c.inizioSerio):""}</span></div><dl class="kv">
+    <dt>Perdite pregresse</dt><dd class="${cls(-preg)}">${eur(-preg)}</dd>
+    <dt>Bilancio netto dall'inizio serio</dt><dd class="${cls(nettoAll)}">${eur(nettoAll,true)}</dd>
+    <dt class="strong">Bilancio complessivo</dt><dd class="${cls(nettoAll-preg)}">${eur(nettoAll-preg,true)}</dd>
+  </dl>${rec!=null?`<div class="bar" aria-hidden="true"><i style="width:${(rec*100).toFixed(1)}%"></i></div><p class="note">Perdite pregresse recuperate: ${pct(rec,false)}</p>`:`<p class="note">Registra le perdite di prima dell'inizio serio come «Perdita pregressa»: restano fuori da ROI e saldi.</p>`}</section>`;
+  return h;
+}
+
+function entryRow(e){
+  const p=pl(e);
+  let title, meta, side;
+  const ex = e.ex ? ' <span class="pill ex">esempio</span>' : "";
+  if(isBet(e)){
+    title=`${esc(e.ev||"Scommessa")} <small>${esc(e.merc||"")}</small>`;
+    meta=[servName(e.serv),provName(e.prov),e.quota?"@"+dec(num(e.quota)):"",eur(n0(e.stake))].filter(Boolean).map(esc).join(" · ");
+    const pc = isOpen(e)?"open" : e.esito==="Rimborsata"?"" : p>0?"win":p<0?"loss":"";
+    side=`${isOpen(e)?`<span class="amt zero">${eur(n0(e.stake))}</span>`:`<span class="amt ${cls(p)}">${eur(p,true)}</span>`}<span class="pill ${pc}">${esc(isOpen(e)?"Aperta":e.esito)}</span>`;
+  } else {
+    title=esc(e.tipo);
+    const bits=[];
+    if(e.tipo==="Bilancio storico"){ bits.push(e.sport||""); bits.push(servName(e.serv)); bits.push(e.dal?"dal "+dmy(e.dal):""); }
+    else { bits.push(provName(e.prov)); bits.push(servName(e.serv)); }
+    if(e.note) bits.push(e.note);
+    meta=bits.filter(Boolean).map(esc).join(" · ");
+    let a, c;
+    if(e.tipo==="Versamento"||isCheck(e)){ a=eur(n0(e.imp)); c="zero"; }
+    else if(e.tipo==="Prelievo"){ a=eur(-n0(e.imp)); c="zero"; }
+    else { a=eur(p,true); c=cls(p); }
+    side=`<span class="amt ${c}">${a}</span>`;
+  }
+  return `<button class="row" data-act="edit" data-id="${e.id}"><span class="row-main"><span class="row-t">${title}${ex}</span><span class="row-m">${meta||"&nbsp;"}</span></span><span class="row-s">${side}</span></button>`;
+}
+
+function vMov(){
+  const u=S.ui;
+  const F={tutti:()=>true, scommesse:isBet, aperte:isOpen, soldi:e=>["Versamento","Prelievo","Bonus"].includes(e.tipo)||isCheck(e), costi:e=>e.tipo==="Costo servizio", storico:e=>e.tipo==="Bilancio storico"||e.tipo==="Perdita pregressa"};
+  const q=u.q.trim().toLowerCase();
+  let list=S.entries.filter(F[u.movf]||F.tutti);
+  if(q) list=list.filter(e=>[e.ev,e.merc,e.note,e.sport,e.tipo,e.esito,servName(e.serv),provName(e.prov)].join(" ").toLowerCase().includes(q));
+  let h=`<input class="search" id="q" type="search" placeholder="Cerca evento, servizio, provider…" value="${esc(u.q)}" aria-label="Cerca movimenti">
+  <div class="chips" role="group" aria-label="Filtro">${[["tutti","Tutti"],["scommesse","Scommesse"],["aperte","Aperte"],["soldi","Versamenti e saldi"],["costi","Costi"],["storico","Storico"]].map(([v,l])=>chip("movf",v,l,u.movf)).join("")}</div>
+  <section class="card" style="padding-top:4px">`;
+  if(!list.length) h+=`<p class="empty" style="padding-top:12px">${S.entries.length?"Nessun movimento con questi filtri.":"Ancora nessun movimento. Tocca + per aggiungere il primo."}</p>`;
+  let last="";
+  for(const e of list.slice(0,u.limit)){ if(e.data!==last){ last=e.data; h+=`<div class="day">${esc(dayLabel(e.data))}</div>`; } h+=entryRow(e); }
+  h+=`</section>`;
+  if(list.length>u.limit) h+=`<button class="btn" style="width:100%" data-act="more">Mostra altri (${list.length-u.limit})</button>`;
+  return h;
+}
+
+function servStats(s){
+  const l=S.entries.filter(e=>e.serv===s.id);
+  const P=perf(l.filter(e=>e.tipo!=="Bilancio storico"&&tracked(e)));
+  const st=sum(l.filter(e=>e.tipo==="Bilancio storico"),e=>pl(e)||0);
+  const tot=sum(l,dNetto);
+  const costiAll=sum(l.filter(e=>e.tipo==="Costo servizio"),e=>n0(e.imp));
+  const bets=l.filter(isBet).map(e=>e.data).sort();
+  const bk = s.bankroll!=null && s.bankroll!=="" ? n0(s.bankroll)+tot : null;
+  return {P,st,tot,costiAll,bk,stakePct:(bk>0&&num(s.stake)!=null)?num(s.stake)/bk:null,first:bets[0],last:bets[bets.length-1]};
+}
+function vServ(){
+  const c=cfg();
+  let h=`<div class="card-h" style="margin:4px 0 10px"><h2>Servizi</h2><button class="btn sm pri" data-act="edit-serv" data-id="">+ Nuovo servizio</button></div>`;
+  if(!c.servizi.length) h+=`<p class="empty">Nessun servizio. Un servizio è un tipster, un metodo o le tue giocate personali.</p>`;
+  const order=s=>s.stato==="Chiuso"?2:s.stato==="In pausa"?1:0;
+  for(const s of c.servizi.slice().sort((a,b)=>order(a)-order(b))){
+    const x=servStats(s);
+    h+=`<section class="card"><div class="ent-h"><div><h3>${esc(s.nome)}</h3><div class="pills"><span class="pill acc">${esc(s.ambito||"–")}</span><span class="pill ${s.stato==="Attivo"?"win":s.stato==="In pausa"?"open":""}">${esc(s.stato||"Attivo")}</span>${s.ex?'<span class="pill ex">esempio</span>':""}</div></div>
+      <button class="btn sm" data-act="edit-serv" data-id="${esc(s.id)}">Modifica</button></div>
+      <div class="ent-big ${cls(x.tot)}">${eur(x.tot,true)}</div><div class="small muted">bilancio netto${x.st?` · storico ${eur(x.st,true)}`:""}${x.costiAll?` · costi ${eur(-x.costiAll)}`:""}</div>
+      <div class="grid-stats">
+        <div><span>Stake attuale</span><b>${eur(num(s.stake))}</b></div>
+        <div><span>Bankroll attuale</span><b>${eur(x.bk)}</b></div>
+        <div><span>Stake / bankroll</span><b>${pct(x.stakePct,false)}</b></div>
+        <div><span>In gioco ora</span><b>${eur(x.P.inGioco)}</b></div>
+        <div><span>Giocato</span><b>${eur(x.P.puntato)}</b></div>
+        <div><span>Profitto scommesse</span><b class="${cls(x.P.pl)}">${eur(x.P.pl,true)}</b></div>
+        <div><span>Costi totali</span><b class="${cls(-x.costiAll)}">${eur(-x.costiAll)}</b></div>
+        <div><span>ROI lordo</span><b class="${cls(x.P.roi)}">${pct(x.P.roi)}</b></div>
+        <div><span>ROI netto</span><b class="${cls(x.P.roin)}">${pct(x.P.roin)}</b></div>
+        <div><span>Giocate chiuse</span><b>${x.P.n}</b></div>
+        <div><span>% vinte</span><b>${pct(x.P.win,false)}</b></div>
+        <div><span>Quota media</span><b>${dec(x.P.quota)}</b></div>
+        <div><span>Prima giocata</span><b>${dmy(x.first)}</b></div>
+        <div><span>Ultima giocata</span><b>${dmy(x.last)}</b></div>
+        <div><span>Abbonamento</span><b>${num(s.costo)?eur(num(s.costo))+" "+esc((s.rinnovo||"").toLowerCase()):"–"}</b></div>
+      </div></section>`;
+  }
+  h+=`<p class="note">Bankroll attuale = bankroll iniziale + bilancio netto del servizio. ROI calcolato solo sulle giocate registrate${c.inizioVolume?" dal "+dmy(c.inizioVolume):""}.</p>`;
+  return h;
+}
+
+function provStats(p){
+  const l=S.entries.filter(e=>e.prov===p.id);
+  const by=t=>sum(l.filter(e=>e.tipo===t),e=>n0(e.imp));
+  const P=perf(l.filter(isBet));
+  const ps=provSaldo(p.id);
+  return {vers:by("Versamento"),prel:by("Prelievo"),bonus:by("Bonus"),P,saldo:ps.saldo,cp:ps.cp,verified:ps.verified,disp:ps.saldo-P.inGioco,last:l.length?l.map(e=>e.data).sort().pop():null};
+}
+function vProv(){
+  const c=cfg();
+  let h=`<div class="card-h" style="margin:4px 0 10px"><h2>Provider</h2><button class="btn sm pri" data-act="edit-prov" data-id="">+ Nuovo provider</button></div>`;
+  if(!c.providers.length) h+=`<p class="empty">Nessun provider. Aggiungi i bookmaker e gli exchange che usi.</p>`;
+  const rows=c.providers.map(p=>({p,x:provStats(p)})).sort((a,b)=>(b.x.verified-a.x.verified)||(b.x.verified?b.x.disp-a.x.disp:(b.x.vers-b.x.prel)-(a.x.vers-a.x.prel)));
+  let T={vers:0,prel:0,saldo:0,disp:0,inG:0,nv:0};
+  for(const {p,x} of rows){
+    T.vers+=x.vers; T.prel+=x.prel; T.inG+=x.P.inGioco;
+    if(x.verified){ T.saldo+=x.saldo; T.disp+=x.disp; T.nv++; }
+    const big = x.verified
+      ? `<div class="ent-big">${eur(x.disp)}</div><div class="small muted">disponibile sul conto · saldo ${eur(x.saldo)}${x.P.inGioco?` di cui ${eur(x.P.inGioco)} in gioco`:""}</div>`
+      : `<div class="ent-big ${cls(x.vers-x.prel)}">${eur(x.vers-x.prel)}</div><div class="small muted">versato netto · saldo del conto da verificare</div>`;
+    h+=`<section class="card"><div class="ent-h"><div><h3>${esc(p.nome)}</h3><div class="pills"><span class="pill acc">${esc(p.tipo||"Bookmaker")}</span>${x.verified?`<span class="pill win">verificato ${esc(dm(x.cp.data))}</span>`:`<span class="pill open">da verificare</span>`}</div></div>
+      <button class="btn sm" data-act="edit-prov" data-id="${esc(p.id)}">Modifica</button></div>
+      ${big}
+      <div class="grid-stats">
+        <div><span>Versato</span><b>${eur(x.vers)}</b></div>
+        <div><span>Prelevato</span><b>${eur(x.prel)}</b></div>
+        <div><span>Saldo verificato</span><b>${x.verified?eur(n0(x.cp.imp))+" il "+dmy(x.cp.data):"–"}</b></div>
+        <div><span>Profitto scommesse</span><b class="${cls(x.P.pl)}">${eur(x.P.pl,true)}</b></div>
+        <div><span>Bonus</span><b>${eur(x.bonus)}</b></div>
+        <div><span>Giocato</span><b>${eur(x.P.puntato)}</b></div>
+        <div><span>ROI</span><b class="${cls(x.P.roi)}">${pct(x.P.roi)}</b></div>
+        <div><span>Ultimo movimento</span><b>${dmy(x.last)}</b></div>
+      </div>${p.note?`<p class="note">${esc(p.note)}</p>`:""}</section>`;
+  }
+  if(rows.length) h+=`<section class="card"><dl class="kv"><dt>Totale versato</dt><dd>${eur(T.vers)}</dd><dt>Totale prelevato</dt><dd>${eur(T.prel)}</dd>
+    <dt class="strong">Saldo dei conti verificati (${T.nv} su ${rows.length})</dt><dd>${T.nv?eur(T.saldo):"–"}</dd><dt>In gioco</dt><dd>${eur(T.inG)}</dd><dt class="strong">Disponibile sui conti verificati</dt><dd>${T.nv?eur(T.disp):"–"}</dd></dl>
+    <p class="note">Per far tornare un conto aggiungi un movimento «Saldo verificato» con quanto vedi sul sito, meglio quando non hai giocate aperte lì. Da quel momento il saldo si aggiorna da solo con versamenti, prelievi, giocate e bonus.</p></section>`;
+  return h;
+}
+
+function vAltro(){
+  const c=cfg();
+  const hasEx=S.entries.some(e=>e.ex)||c.servizi.some(s=>s.ex);
+  let h=`<h2 style="margin:4px 0 12px">Impostazioni e altro</h2>
+  <section class="card"><h3>Date di riferimento</h3>
+    <form id="f-dates" style="margin-top:10px">
+      <div class="g2">
+        <label class="fld">Inizio attività seria<input type="date" id="d-serio" name="serio" value="${esc(c.inizioSerio||"")}"></label>
+        <label class="fld">Inizio registro giocate<input type="date" id="d-vol" name="vol" value="${esc(c.inizioVolume||"")}"></label>
+      </div>
+      <p class="hint">Dalla seconda data in poi registri ogni scommessa: volume e ROI si calcolano solo da lì. Prima usi «Bilancio storico».</p>
+      <div><button class="btn pri" type="submit">Salva date</button></div>
+    </form></section>
+  <section class="card"><h3>Sport</h3>
+    <div class="tagrow" style="margin-top:10px">${c.sport.map(s=>`<span class="tag">${esc(s)}<button type="button" data-act="sport-del" data-v="${esc(s)}" aria-label="Togli ${esc(s)}">×</button></span>`).join("")}</div>
+    <form id="f-sport" class="inline"><input id="sport-new" placeholder="Aggiungi uno sport" aria-label="Nuovo sport"><button class="btn" type="submit">Aggiungi</button></form>
+  </section>
+  ${S.mode==="local"?`<section class="card"><h3>Backup</h3>
+    <p class="note" style="margin-top:6px">I dati sono salvati solo nel browser di questo dispositivo. Se cancelli i dati di navigazione o cambi telefono li perdi: scarica un backup ogni tanto e conservalo (per esempio mandandolo a te stesso). Ultimo backup: ${S.lastBackup?esc(new Date(S.lastBackup).toLocaleDateString("it-IT")):"mai"}.</p>
+    <div class="inline" style="flex-wrap:wrap"><button class="btn pri" data-act="backup">Esporta backup</button><button class="btn" data-act="copy-backup">Copia backup</button></div>
+    <div class="inline" style="flex-wrap:wrap"><button class="btn" data-act="import">Importa file di backup</button><button class="btn" data-act="paste-backup">Incolla backup</button></div>
+    <p class="hint" style="margin-top:8px">Se «Esporta backup» non scarica niente, usa «Copia backup» e incolla il testo in una chat con te stesso o nelle Note.</p>
+    <p class="hint" style="margin-top:8px">Importare un backup sostituisce i dati attuali con quelli del file.</p>
+  </section>`:""}
+  <section class="card"><h3>Esporta</h3>
+    <p class="note" style="margin-top:6px">Scarica tutti i movimenti, i servizi e i provider in un file Excel: ti serve come copia di sicurezza o per analisi più approfondite.</p>
+    <div style="margin-top:10px">${S.downloads?`<button class="btn pri" data-act="export">Scarica Excel (.xlsx)</button>`:`<span class="small muted">Il download non è disponibile in questa vista: apri la pagina da claude.ai.</span>`}</div>
+  </section>`;
+  if(hasEx) h+=`<section class="card"><h3>Dati di esempio</h3><p class="note" style="margin-top:6px">Toglie i movimenti e i servizi segnati come esempio. I provider e le date restano: modificali tu.</p><div style="margin-top:10px"><button class="btn danger" data-act="del-ex">Elimina dati di esempio</button></div></section>`;
+  h+=`<section class="card howto"><h3 style="margin-bottom:8px">Come registrare</h3>
+    <p><b>Scommessa</b>: provider, servizio, sport, quota, stake ed esito. Se è ancora da giocare lasciala «In attesa» e la chiudi poi dal Riepilogo.</p>
+    <p><b>Cash out/Manuale</b>: scrivi quanto è tornato sul conto, stake compreso. Va bene anche per vincite su exchange al netto della commissione e per le bancate (stake = responsabilità).</p>
+    <p><b>Mezza vinta / Mezza persa</b>: per gli handicap asiatici con linee a quarti.</p>
+    <p><b>Bilancio storico</b>: il risultato di un periodo senza le singole giocate, per sport o servizio. Entra nel bilancio, non nel ROI.</p>
+    <p><b>Saldo verificato</b>: quanto vedi sul conto del bookmaker in quella data. Da lì in poi il saldo del conto si calcola da solo; puoi rifarlo quando vuoi per ricontrollare.</p>
+    <p><b>Costo servizio</b>: abbonamenti e strumenti. Pesa sul bilancio del servizio, non sul conto del bookmaker.</p>
+    <p><b>Perdita pregressa</b>: quanto hai perso prima dell'inizio serio, anche come cifra unica.</p>
+  </section>
+  <p class="note">${S.mode==="local"?"I dati restano su questo dispositivo, nel browser con cui apri il file: non vengono inviati da nessuna parte.":"I dati sono salvati online nel tuo account e li vedi solo tu, anche se condividi il link della pagina."}</p>`;
+  return h;
+}
+
+/* ------------------------------------------------------------------ grafico */
+function drawChart(){
+  const host=$("#chart"); if(!host) return;
+  const list=byAmb(S.entries,S.ui.amb).filter(e=>dNetto(e)!==0).slice().sort((a,b)=>a.data<b.data?-1:a.data>b.data?1:(a.ts||0)-(b.ts||0));
+  const byDay=new Map(); let cum=0;
+  for(const e of list){ cum+=dNetto(e); byDay.set(e.data,cum); }
+  const pts=[...byDay.entries()].map(([d,v])=>({d,v,t:pdate(d).getTime()}));
+  if(pts.length<2){ host.style.height="auto"; host.innerHTML='<p class="empty">Il grafico compare dopo almeno due giorni con movimenti.</p>'; return; }
+  const W=Math.max(280,host.clientWidth), H=190, L=58, R=14, T=14, B=24;
+  const vals=pts.map(p=>p.v); let lo=Math.min(0,...vals), hi=Math.max(0,...vals);
+  const ticks=nice(lo,hi,4); lo=ticks[0]; hi=ticks[ticks.length-1];
+  const t0=pts[0].t, t1=pts[pts.length-1].t, span=Math.max(1,t1-t0);
+  const X=t=>L+(W-L-R)*(t-t0)/span, Y=v=>T+(H-T-B)*(hi-v)/((hi-lo)||1);
+  let path="", area="";
+  pts.forEach((p,i)=>{ path+=(i?"L":"M")+X(p.t).toFixed(1)+","+Y(p.v).toFixed(1); });
+  area=path+"L"+X(t1).toFixed(1)+","+Y(0).toFixed(1)+"L"+X(t0).toFixed(1)+","+Y(0).toFixed(1)+"Z";
+  const last=pts[pts.length-1];
+  const fmtT=v=>Math.abs(v)>=1000?(v/1000).toLocaleString("it-IT",{maximumFractionDigits:1})+"k €":v.toLocaleString("it-IT",{maximumFractionDigits:0})+" €";
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bilancio cumulato: da ${eur(pts[0].v)} il ${dmy(pts[0].d)} a ${eur(last.v)} il ${dmy(last.d)}">`;
+  for(const tv of ticks){ const y=Y(tv).toFixed(1); s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="${tv===0?1.5:1}"/><text x="${L-8}" y="${(+y+4)}" text-anchor="end" font-size="11.5" fill="var(--muted)">${fmtT(tv)}</text>`; }
+  s+=`<path d="${area}" fill="var(--accent)" opacity=".12"/><path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+  s+=`<text x="${L}" y="${H-6}" font-size="11.5" fill="var(--muted)">${dmy(pts[0].d)}</text><text x="${W-R}" y="${H-6}" font-size="11.5" fill="var(--muted)" text-anchor="end">${dmy(last.d)}</text>`;
+  s+=`<circle cx="${X(last.t).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="4.5" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>`;
+  s+=`<line id="cg" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/><circle id="cd" r="4" fill="var(--ink)" visibility="hidden"/>`;
+  s+=`<rect x="${L}" y="0" width="${W-L-R}" height="${H}" fill="transparent" id="ch"/></svg><div class="tip" id="ct"></div>`;
+  host.style.height=H+"px"; host.innerHTML=s;
+  const hit=$("#ch"), g=$("#cg"), dot=$("#cd"), tip=$("#ct");
+  const move=ev=>{ const r=host.getBoundingClientRect(); const x=(ev.clientX-r.left)*(W/r.width); let best=pts[0],bd=1e18; for(const p of pts){ const d=Math.abs(X(p.t)-x); if(d<bd){bd=d;best=p;} }
+    const px=X(best.t), py=Y(best.v); g.setAttribute("x1",px); g.setAttribute("x2",px); g.setAttribute("visibility","visible"); dot.setAttribute("cx",px); dot.setAttribute("cy",py); dot.setAttribute("visibility","visible");
+    tip.style.display="block"; tip.textContent=dmy(best.d)+" · "+eur(best.v,true); const tx=Math.min(Math.max(px*r.width/W,60),r.width-60); tip.style.left=tx+"px"; };
+  const out=()=>{ g.setAttribute("visibility","hidden"); dot.setAttribute("visibility","hidden"); tip.style.display="none"; };
+  hit.addEventListener("pointermove",move); hit.addEventListener("pointerdown",move); hit.addEventListener("pointerleave",out);
+}
+function nice(lo,hi,count){
+  if(lo===hi){ hi=lo+1; }
+  const step0=(hi-lo)/count, mag=Math.pow(10,Math.floor(Math.log10(step0))), nrm=step0/mag;
+  const step=(nrm<1.5?1:nrm<3?2:nrm<7?5:10)*mag;
+  const a=Math.floor(lo/step)*step, b=Math.ceil(hi/step)*step, out=[];
+  for(let v=a; v<=b+step/2; v+=step) out.push(Math.round(v/step)*step);
+  return out;
+}
+
+/* ------------------------------------------------------------------ pannello */
+function openSheet(html, mount){
+  const pn=$("#sheet-pn"); pn.innerHTML=html; const sh=$("#sheet"); sh.classList.add("on"); sh.setAttribute("aria-hidden","false");
+  document.body.style.overflow="hidden"; pn.scrollTop=0; if(mount) mount(pn);
+}
+function closeSheet(){ const sh=$("#sheet"); sh.classList.remove("on"); sh.setAttribute("aria-hidden","true"); document.body.style.overflow=""; $("#sheet-pn").innerHTML=""; }
+
+function opts(list, cur, ph){
+  return (ph!=null?`<option value="">${esc(ph)}</option>`:"")+list.map(o=>`<option value="${esc(o.v)}"${o.v===cur?" selected":""}>${esc(o.l)}</option>`).join("");
+}
+function entryForm(e){
+  const c=cfg(), isNew=!e;
+  const last=lsGet("last")||{};
+  const d = e ? Object.assign({},e) : {tipo:last.tipo||"Scommessa", data:today(), prov:last.prov||"", serv:last.serv||"", sport:last.sport||"", esito:"In attesa"};
+  const provOpts=c.providers.map(p=>({v:p.id,l:p.nome}));
+  if(d.prov && !prov(d.prov)) provOpts.push({v:d.prov,l:"Provider eliminato"});
+  const servOpts=c.servizi.filter(s=>s.stato!=="Chiuso"||s.id===d.serv).map(s=>({v:s.id,l:s.nome+(s.stato==="Chiuso"?" (chiuso)":"")}));
+  const sportOpts=c.sport.map(s=>({v:s,l:s})); if(d.sport && !c.sport.includes(d.sport)) sportOpts.push({v:d.sport,l:d.sport});
+  const neg = d.tipo==="Bilancio storico" && n0(d.imp)<0;
+  const impVal = d.imp==null ? "" : String(Math.abs(n0(d.imp))).replace(".",",");
+  const v = x => x==null ? "" : String(x).replace(".",",");
+  return `<div class="pn-h"><h2 id="sheet-title">${isNew?"Nuovo movimento":"Modifica movimento"}</h2><button class="iconbtn" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <form id="f-entry" novalidate data-id="${e?esc(e.id):""}" data-bk="${e?esc(e.bk):""}">
+    <fieldset class="seg"><legend>Tipo</legend>${TIPI.map(t=>`<label><input type="radio" name="tipo" value="${esc(t)}"${t===d.tipo?" checked":""}><span>${esc(t)}</span></label>`).join("")}</fieldset>
+    <div class="g2">
+      <label class="fld" data-show="dal">Dal<input type="date" name="dal" value="${esc(d.dal||cfg().inizioSerio||"")}"></label>
+      <label class="fld"><span data-lab="data">Data</span><input type="date" name="data" value="${esc(d.data||today())}" required></label>
+      <label class="fld" data-show="prov"><span data-lab="prov">Provider</span><select name="prov">${opts(provOpts,d.prov,"— scegli —")}</select></label>
+    </div>
+    ${c.providers.length?"":`<p class="hint" data-show="prov">Non hai ancora provider: aggiungili dalla sezione Provider.</p>`}
+    <label class="fld" data-show="serv"><span data-lab="serv">Servizio</span><select name="serv">${opts(servOpts,d.serv,"— scegli —")}</select></label>
+    <label class="fld" data-show="sport"><span data-lab="sport">Sport</span><select name="sport">${opts(sportOpts,d.sport,"— scegli —")}</select></label>
+    <div data-show="bet" style="display:flex;flex-direction:column;gap:12px">
+      <label class="fld">Evento<input name="ev" value="${esc(d.ev||"")}" placeholder="es. Inter - Milan" autocomplete="off"></label>
+      <label class="fld">Mercato / selezione<input name="merc" value="${esc(d.merc||"")}" placeholder="es. Over 2.5" autocomplete="off"></label>
+      <div class="g2">
+        <label class="fld">Quota<input name="quota" inputmode="decimal" value="${esc(v(d.quota))}" placeholder="1,85" autocomplete="off"></label>
+        <label class="fld">Stake (€)<input name="stake" inputmode="decimal" value="${esc(v(d.stake))}" placeholder="30" autocomplete="off"></label>
+      </div>
+      <button type="button" class="linkbtn" id="use-stake" hidden></button>
+      <fieldset class="seg esiti"><legend>Esito</legend>${ESITI.map(t=>`<label><input type="radio" name="esito" value="${esc(t)}"${t===(d.esito||"In attesa")?" checked":""}><span>${esc(t)}</span></label>`).join("")}</fieldset>
+    </div>
+    <fieldset class="seg" data-show="segno"><legend>Risultato del periodo</legend>
+      <label><input type="radio" name="segno" value="+"${neg?"":" checked"}><span>Profitto</span></label>
+      <label><input type="radio" name="segno" value="-"${neg?" checked":""}><span>Perdita</span></label>
+    </fieldset>
+    <p class="hint" data-show="check">Da questa data il saldo del conto riparte da qui. Inseriscilo quando su quel conto non hai giocate aperte.</p>
+    <label class="fld" data-show="imp"><span data-lab="imp">Importo (€)</span><input name="imp" inputmode="decimal" value="${esc(impVal)}" placeholder="0,00" autocomplete="off"></label>
+    <label class="fld">Note<input name="note" value="${esc(d.note||"")}" autocomplete="off"></label>
+    <div class="preview" id="f-prev" aria-live="polite"></div>
+    <p class="err" id="f-err" role="alert"></p>
+    <div class="acts-row">${isNew?"":`<button type="button" class="btn danger" data-act="del-entry">Elimina</button>`}
+      <div class="r"><button type="button" class="btn" data-act="close">Annulla</button><button type="submit" class="btn pri">Salva</button></div></div>
+  </form>`;
+}
+function formVals(f){
+  const g=n=>{ const el=f.elements[n]; return el ? (el.value||"").trim() : ""; };
+  const r=n=>{ const el=f.querySelector(`input[name="${n}"]:checked`); return el?el.value:""; };
+  return {tipo:r("tipo"), esito:r("esito"), segno:r("segno"), data:g("data"), dal:g("dal"), prov:g("prov"), serv:g("serv"), sport:g("sport"), ev:g("ev"), merc:g("merc"), quota:num(g("quota")), stake:num(g("stake")), imp:num(g("imp")), note:g("note")};
+}
+function applyForm(f){
+  const x=formVals(f), t=x.tipo;
+  const show={
+    prov: ["Scommessa","Versamento","Prelievo","Bonus","Saldo verificato","Perdita pregressa"].includes(t),
+    check: t==="Saldo verificato",
+    serv: ["Scommessa","Costo servizio","Bonus","Bilancio storico"].includes(t),
+    sport: ["Scommessa","Bilancio storico"].includes(t),
+    bet: t==="Scommessa",
+    imp: t!=="Scommessa" || x.esito==="Cash out/Manuale",
+    segno: t==="Bilancio storico",
+    dal: t==="Bilancio storico"
+  };
+  f.querySelectorAll("[data-show]").forEach(el=>{ el.hidden=!show[el.dataset.show]; });
+  const opt = {prov:["Bonus","Perdita pregressa"].includes(t), serv:["Bonus","Bilancio storico"].includes(t), sport:t==="Bilancio storico"};
+  f.querySelector('[data-lab="prov"]').textContent="Provider"+(opt.prov?" (facoltativo)":"");
+  f.querySelector('[data-lab="serv"]').textContent="Servizio"+(opt.serv?" (facoltativo)":"");
+  f.querySelector('[data-lab="sport"]').textContent="Sport"+(opt.sport?" (facoltativo)":"");
+  f.querySelector('[data-lab="data"]').textContent = t==="Bilancio storico" ? "Al" : "Data";
+  f.querySelector('[data-lab="imp"]').textContent = IMP_LABEL[t] || "Importo (€)";
+  /* stake del servizio */
+  const s=serv(x.serv), b=f.querySelector("#use-stake");
+  if(t==="Scommessa" && s && num(s.stake)!=null && x.stake!==num(s.stake)){ b.hidden=false; b.textContent="Usa lo stake del servizio: "+eur(num(s.stake)); b.dataset.v=num(s.stake); } else b.hidden=true;
+  /* anteprima */
+  const e=toEntry(x), p=pl(e), pv=f.querySelector("#f-prev");
+  if(t==="Scommessa"){
+    if(isOpen(e)) pv.innerHTML = x.stake&&x.quota ? `<span class="muted" style="font-family:var(--font-body);font-size:14px;font-weight:600">Vincita possibile</span> <span class="pos">${eur(x.stake*(Math.max(x.quota,1)-1),true)}</span>` : "";
+    else pv.innerHTML = x.stake!=null ? `<span class="muted" style="font-family:var(--font-body);font-size:14px;font-weight:600">Profitto</span> <span class="${cls(p)}">${eur(p,true)}</span>` : "";
+  } else if(t==="Bilancio storico" && x.imp!=null){ pv.innerHTML=`<span class="${cls(p)}">${eur(p,true)}</span>`; }
+  else pv.innerHTML="";
+}
+function toEntry(x){
+  const t=x.tipo, e={data:x.data, tipo:t, note:x.note||null};
+  if(["Scommessa","Versamento","Prelievo","Bonus","Saldo verificato","Perdita pregressa"].includes(t)) e.prov=x.prov||null;
+  if(["Scommessa","Costo servizio","Bonus","Bilancio storico"].includes(t)) e.serv=x.serv||null;
+  if(["Scommessa","Bilancio storico"].includes(t)) e.sport=x.sport||null;
+  if(t==="Scommessa"){ e.ev=x.ev||null; e.merc=x.merc||null; e.quota=x.quota; e.stake=x.stake; e.esito=x.esito||"In attesa"; e.imp = e.esito==="Cash out/Manuale" ? x.imp : null; }
+  else if(t==="Bilancio storico"){ e.dal=x.dal||null; e.imp = x.imp==null?null : (x.segno==="-"?-Math.abs(x.imp):Math.abs(x.imp)); }
+  else e.imp=x.imp;
+  return e;
+}
+function validate(x){
+  const t=x.tipo;
+  if(!t) return "Scegli il tipo di movimento.";
+  if(!x.data) return "Inserisci la data.";
+  const needProv=["Scommessa","Versamento","Prelievo","Saldo verificato"].includes(t);
+  if(needProv && !x.prov) return "Scegli il provider.";
+  if(["Scommessa","Costo servizio"].includes(t) && !x.serv) return "Scegli il servizio.";
+  if(t==="Scommessa"){
+    if(!(x.stake>0)) return "Inserisci lo stake (un numero maggiore di zero).";
+    if(x.esito!=="Cash out/Manuale" && x.esito!=="Rimborsata" && !(x.quota>=1.01)) return "Inserisci la quota decimale (almeno 1,01).";
+    if(x.esito==="Cash out/Manuale" && !(x.imp>=0) ) return "Scrivi quanto hai incassato (0 se niente).";
+  } else if(t==="Bilancio storico"){
+    if(x.imp==null) return "Inserisci l'importo del bilancio.";
+    if(!x.serv && !x.sport) return "Indica almeno lo sport o il servizio del bilancio.";
+    if(x.dal && x.dal>x.data) return "La data «Dal» deve venire prima di «Al».";
+  } else if(t==="Saldo verificato"){ if(!(x.imp>=0)) return "Inserisci il saldo che vedi sul conto (anche 0)."; }
+  else if(!(x.imp>0)) return "Inserisci un importo maggiore di zero.";
+  return "";
+}
+function openEntry(id){
+  const e = id ? S.entries.find(x=>x.id===id) : null;
+  if(id && !e) return;
+  openSheet(entryForm(e), pn=>{
+    const f=pn.querySelector("#f-entry");
+    applyForm(f);
+    f.addEventListener("change", ev=>{
+      if(ev.target.name==="serv"){ const s=serv(ev.target.value); if(s && num(s.stake)!=null && !f.elements.stake.value) f.elements.stake.value=String(num(s.stake)).replace(".",","); }
+      applyForm(f);
+    });
+    f.addEventListener("input", ()=>applyForm(f));
+    pn.querySelector("#use-stake").addEventListener("click", ev=>{ f.elements.stake.value=String(ev.currentTarget.dataset.v).replace(".",","); applyForm(f); });
+    f.addEventListener("submit", async ev=>{
+      ev.preventDefault();
+      const x=formVals(f), msg=validate(x), errEl=f.querySelector("#f-err");
+      errEl.textContent=msg; if(msg) return;
+      const ent=toEntry(x);
+      const editId=f.dataset.id, oldBk=f.dataset.bk||null;
+      const prev=editId?S.entries.find(z=>z.id===editId):null;
+      ent.ts = prev&&prev.ts ? prev.ts : Date.now();
+      if(prev&&prev.ex) ent.ex=true;
+      const id=editId||uid();
+      lsSet("last",{tipo:x.tipo,prov:x.prov||(lsGet("last")||{}).prov,serv:x.serv||(lsGet("last")||{}).serv,sport:x.sport||(lsGet("last")||{}).sport});
+      const btn=f.querySelector('button[type="submit"]'); btn.disabled=true;
+      try{ await putEntry(id, ent, oldBk); closeSheet(); render(); toast(editId?"Movimento aggiornato":"Movimento salvato"); }
+      catch(err){ btn.disabled=false; errEl.textContent=errMsg(err); }
+    });
+  });
+}
+async function settle(id, esito){
+  const e=S.entries.find(x=>x.id===id); if(!e) return;
+  const ent=Object.assign({},e,{esito}); delete ent.id; delete ent.bk;
+  try{ await putEntry(id, ent, e.bk); render(); toast(esito==="Vinta"?"Segnata come vinta":"Segnata come persa"); }catch(err){ toast(errMsg(err)); }
+}
+
+/* servizi e provider */
+function servForm(s){
+  const isNew=!s; s=s||{ambito:"Professionale",stato:"Attivo",rinnovo:"Mensile"};
+  const v=x=>x==null?"":String(x).replace(".",",");
+  const used = s.id ? S.entries.filter(e=>e.serv===s.id).length : 0;
+  return `<div class="pn-h"><h2 id="sheet-title">${isNew?"Nuovo servizio":"Modifica servizio"}</h2><button class="iconbtn" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <form id="f-serv" novalidate data-id="${esc(s.id||"")}">
+    <label class="fld">Nome<input name="nome" value="${esc(s.nome||"")}" placeholder="es. Tipster Calcio" required autocomplete="off"></label>
+    <fieldset class="seg"><legend>Ambito</legend>${AMBITI.map(a=>`<label><input type="radio" name="ambito" value="${a}"${a===s.ambito?" checked":""}><span>${a}</span></label>`).join("")}</fieldset>
+    <div class="g2">
+      <label class="fld">Stake attuale (€)<input name="stake" inputmode="decimal" value="${esc(v(s.stake))}" placeholder="30"></label>
+      <label class="fld">Bankroll iniziale (€)<input name="bankroll" inputmode="decimal" value="${esc(v(s.bankroll))}" placeholder="facoltativo"></label>
+      <label class="fld">Costo abbonamento (€)<input name="costo" inputmode="decimal" value="${esc(v(s.costo))}" placeholder="0"></label>
+      <label class="fld">Rinnovo<select name="rinnovo">${opts(RINNOVI.map(r=>({v:r,l:r})),s.rinnovo)}</select></label>
+      <label class="fld">Data inizio<input type="date" name="inizio" value="${esc(s.inizio||"")}"></label>
+    </div>
+    <p class="hint">Lo stake attuale si propone da solo quando registri una giocata di questo servizio. Il costo qui è un promemoria: i pagamenti veri si registrano come «Costo servizio».</p>
+    <fieldset class="seg"><legend>Stato</legend>${STATI.map(a=>`<label><input type="radio" name="stato" value="${a}"${a===(s.stato||"Attivo")?" checked":""}><span>${a}</span></label>`).join("")}</fieldset>
+    <label class="fld">Note<input name="note" value="${esc(s.note||"")}"></label>
+    <p class="err" id="f-err" role="alert"></p>
+    <div class="acts-row">${isNew?"":used?`<span class="small muted">${used} movimenti collegati: per toglierlo dalle scelte mettilo «Chiuso».</span>`:`<button type="button" class="btn danger" data-act="del-serv" data-id="${esc(s.id)}">Elimina</button>`}
+      <div class="r"><button type="button" class="btn" data-act="close">Annulla</button><button type="submit" class="btn pri">Salva</button></div></div>
+  </form>`;
+}
+function provForm(p){
+  const isNew=!p; p=p||{tipo:"Bookmaker"};
+  const used = p.id ? S.entries.filter(e=>e.prov===p.id).length : 0;
+  return `<div class="pn-h"><h2 id="sheet-title">${isNew?"Nuovo provider":"Modifica provider"}</h2><button class="iconbtn" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <form id="f-prov" novalidate data-id="${esc(p.id||"")}">
+    <label class="fld">Nome<input name="nome" value="${esc(p.nome||"")}" placeholder="es. Bet365" required autocomplete="off"></label>
+    <fieldset class="seg"><legend>Tipo</legend>${TIPI_PROV.map(a=>`<label><input type="radio" name="tipo" value="${a}"${a===p.tipo?" checked":""}><span>${a}</span></label>`).join("")}</fieldset>
+    <label class="fld">Note<input name="note" value="${esc(p.note||"")}"></label>
+    <p class="err" id="f-err" role="alert"></p>
+    <div class="acts-row">${isNew?"":used?`<span class="small muted">${used} movimenti collegati: non si può eliminare.</span>`:`<button type="button" class="btn danger" data-act="del-prov" data-id="${esc(p.id)}">Elimina</button>`}
+      <div class="r"><button type="button" class="btn" data-act="close">Annulla</button><button type="submit" class="btn pri">Salva</button></div></div>
+  </form>`;
+}
+function openServ(id){
+  const s=id?cfg().servizi.find(x=>x.id===id):null;
+  openSheet(servForm(s), pn=>{
+    const f=pn.querySelector("#f-serv");
+    f.addEventListener("submit", async ev=>{
+      ev.preventDefault();
+      const g=n=>(f.elements[n].value||"").trim(), r=n=>{const el=f.querySelector(`input[name="${n}"]:checked`);return el?el.value:"";};
+      const nome=g("nome"); const err=f.querySelector("#f-err");
+      if(!nome){ err.textContent="Dai un nome al servizio."; return; }
+      const c=JSON.parse(JSON.stringify(cfg()));
+      if(c.servizi.some(x=>x.nome.toLowerCase()===nome.toLowerCase() && x.id!==f.dataset.id)){ err.textContent="Esiste già un servizio con questo nome."; return; }
+      const item={id:f.dataset.id||slug(nome), nome, ambito:r("ambito")||"Professionale", stake:num(g("stake")), bankroll:num(g("bankroll")), costo:num(g("costo")), rinnovo:g("rinnovo"), inizio:g("inizio")||null, stato:r("stato")||"Attivo", note:g("note")};
+      const i=c.servizi.findIndex(x=>x.id===item.id);
+      if(i>=0){ if(c.servizi[i].ex) item.ex=true; c.servizi[i]=item; } else c.servizi.push(item);
+      try{ await saveConfig(c); closeSheet(); toast("Servizio salvato"); }catch(e2){ err.textContent=errMsg(e2); }
+    });
+  });
+}
+function openProv(id){
+  const p=id?cfg().providers.find(x=>x.id===id):null;
+  openSheet(provForm(p), pn=>{
+    const f=pn.querySelector("#f-prov");
+    f.addEventListener("submit", async ev=>{
+      ev.preventDefault();
+      const nome=(f.elements.nome.value||"").trim(), err=f.querySelector("#f-err");
+      if(!nome){ err.textContent="Dai un nome al provider."; return; }
+      const c=JSON.parse(JSON.stringify(cfg()));
+      if(c.providers.some(x=>x.nome.toLowerCase()===nome.toLowerCase() && x.id!==f.dataset.id)){ err.textContent="Esiste già un provider con questo nome."; return; }
+      const r=f.querySelector('input[name="tipo"]:checked');
+      const item={id:f.dataset.id||slug(nome), nome, tipo:r?r.value:"Bookmaker", note:(f.elements.note.value||"").trim()};
+      const i=c.providers.findIndex(x=>x.id===item.id);
+      if(i>=0) c.providers[i]=item; else c.providers.push(item);
+      try{ await saveConfig(c); closeSheet(); toast("Provider salvato"); }catch(e2){ err.textContent=errMsg(e2); }
+    });
+  });
+}
+
+async function deleteExamples(){
+  const ex=S.entries.filter(e=>e.ex);
+  const byBk=new Map(); for(const e of ex){ if(!byBk.has(e.bk)) byBk.set(e.bk,[]); byBk.get(e.bk).push(e.id); }
+  try{
+    for(const [k,ids] of byBk){
+      if(S.mode!=="db"){ const it=bucketItems(k); ids.forEach(i=>delete it[i]); S.buckets.set(k,it); continue; }
+      await enqueue("mov/"+k, ()=>retry(async()=>{ const it=bucketItems(k); ids.forEach(i=>delete it[i]); await S.db.doc("mov/"+k).set({items:it}); }));
+    }
+    if(S.mode!=="db") rebuild();
+    const c=JSON.parse(JSON.stringify(cfg()));
+    const stillUsed=new Set(S.entries.filter(e=>!e.ex).map(e=>e.serv));
+    c.servizi=c.servizi.filter(s=>!s.ex || stillUsed.has(s.id));
+    await saveConfig(c);
+    toast("Dati di esempio eliminati");
+  }catch(err){ toast(errMsg(err)); }
+}
+
+/* ------------------------------------------------------------------ esporta */
+function loadXLSX(){
+  return new Promise((res,rej)=>{ if(window.XLSX) return res(window.XLSX);
+    const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload=()=>res(window.XLSX); s.onerror=()=>rej(new Error("load")); document.head.appendChild(s); });
+}
+async function exportXlsx(btn){
+  if(!S.downloads) return;
+  btn.disabled=true; const lbl=btn.textContent; btn.textContent="Preparo il file…";
+  try{
+    const X=await loadXLSX();
+    const d=s=>s?pdate(s):null, r2=v=>v==null?null:Math.round(v*100)/100;
+    const mov=[["Data","Dal","Tipo","Provider","Servizio","Ambito","Sport","Evento","Mercato","Quota","Stake €","Esito","Importo €","Profitto/Perdita €","Note"]];
+    for(const e of S.entries.slice().reverse()) mov.push([d(e.data),d(e.dal),e.tipo,provName(e.prov),servName(e.serv),ambitoOf(e),e.sport||"",e.ev||"",e.merc||"",num(e.quota),num(e.stake),e.esito||"",num(e.imp),r2(pl(e)),e.note||""]);
+    const sv=[["Servizio","Ambito","Stato","Stake attuale €","Bankroll attuale €","Bilancio netto €","di cui storico €","Giocato €","Profitto scommesse €","Costi €","ROI lordo","ROI netto","Giocate chiuse","% vinte","Quota media"]];
+    for(const s of cfg().servizi){ const x=servStats(s); sv.push([s.nome,s.ambito,s.stato,num(s.stake),r2(x.bk),r2(x.tot),r2(x.st),r2(x.P.puntato),r2(x.P.pl),r2(-x.costiAll),x.P.roi,x.P.roin,x.P.n,x.P.win,x.P.quota]); }
+    const pv=[["Provider","Tipo","Versato €","Prelevato €","Saldo verificato €","Data verifica","Profitto scommesse €","Bonus €","Saldo €","In gioco €","Disponibile €","Giocato €","ROI"]];
+    for(const p of cfg().providers){ const x=provStats(p); pv.push([p.nome,p.tipo,r2(x.vers),r2(x.prel),x.cp?r2(n0(x.cp.imp)):null,x.cp?d(x.cp.data):null,r2(x.P.pl),r2(x.bonus),x.verified?r2(x.saldo):null,r2(x.P.inGioco),x.verified?r2(x.disp):null,r2(x.P.puntato),x.P.roi]); }
+    const wb=X.utils.book_new();
+    const ws1=X.utils.aoa_to_sheet(mov,{cellDates:true}); ws1["!cols"]=[{wch:11},{wch:11},{wch:16},{wch:16},{wch:16},{wch:13},{wch:14},{wch:26},{wch:20},{wch:7},{wch:9},{wch:16},{wch:10},{wch:12},{wch:30}];
+    for(let i=1;i<mov.length;i++){ for(const c of ["A","B"]){ const cell=ws1[c+(i+1)]; if(cell && cell.t==="d") cell.z="dd/mm/yyyy"; } }
+    X.utils.book_append_sheet(wb, ws1, "Movimenti");
+    X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(sv), "Servizi");
+    X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(pv), "Provider");
+    const buf=X.write(wb,{bookType:"xlsx",type:"array",cellDates:true});
+    await S.downloads.save({filename:"bilancio-betting-"+today()+".xlsx", data:new Blob([buf])});
+    toast("File pronto");
+  }catch(err){
+    if(err && err.code==="declined"){} else if(err && err.code==="rate_limited") toast("C'è già una richiesta di download aperta.");
+    else toast(err&&err.message==="load"?"Non riesco a caricare il generatore Excel: controlla la connessione.":"Esportazione non riuscita.");
+  }finally{ btn.disabled=false; btn.textContent=lbl; }
+}
+
+/* ------------------------------------------------------------------ eventi */
+document.addEventListener("click", ev=>{
+  const t=ev.target.closest("[data-act]"); if(!t) return;
+  const a=t.dataset.act;
+  if(a==="add") { if(S.gotMov&&S.gotCfg) openEntry(null); }
+  else if(a==="close") closeSheet();
+  else if(a==="edit") openEntry(t.dataset.id);
+  else if(a==="settle") settle(t.dataset.id, t.dataset.v);
+  else if(a==="amb"){ S.ui.amb=t.dataset.v; render(); }
+  else if(a==="period"){ S.ui.period=t.dataset.v; render(); }
+  else if(a==="movf"){ S.ui.movf=t.dataset.v; S.ui.limit=80; render(); }
+  else if(a==="more"){ S.ui.limit+=120; render(); }
+  else if(a==="edit-serv") openServ(t.dataset.id);
+  else if(a==="edit-prov") openProv(t.dataset.id);
+  else if(a==="export") exportXlsx(t);
+  else if(a==="backup") exportBackup();
+  else if(a==="copy-backup") copyText(JSON.stringify(backupData())).then(()=>{ S.lastBackup=Date.now(); persist(); S.dirty=false; render(); toast("Backup copiato: incollalo dove vuoi conservarlo"); }).catch(()=>toast("Non riesco a copiare in questo browser."));
+  else if(a==="paste-backup") openPaste();
+  else if(a==="import") $("#imp-file").click();
+  else if(a==="del-ex"){
+    if(t.dataset.armed){ t.disabled=true; deleteExamples(); }
+    else { t.dataset.armed="1"; t.textContent="Tocca ancora per confermare"; setTimeout(()=>{ if(t.isConnected){ delete t.dataset.armed; t.textContent=t.classList.contains("sm")?"Elimina esempi":"Elimina dati di esempio"; } },4000); }
+  }
+  else if(a==="del-entry"){
+    const f=$("#f-entry"); if(!f) return;
+    if(!t.dataset.armed){ t.dataset.armed="1"; t.textContent="Conferma eliminazione"; return; }
+    t.disabled=true;
+    removeEntry(f.dataset.id, f.dataset.bk).then(()=>{ closeSheet(); render(); toast("Movimento eliminato"); }).catch(err=>{ t.disabled=false; f.querySelector("#f-err").textContent=errMsg(err); });
+  }
+  else if(a==="del-serv"||a==="del-prov"){
+    if(!t.dataset.armed){ t.dataset.armed="1"; t.textContent="Conferma eliminazione"; return; }
+    const c=JSON.parse(JSON.stringify(cfg()));
+    if(a==="del-serv") c.servizi=c.servizi.filter(x=>x.id!==t.dataset.id); else c.providers=c.providers.filter(x=>x.id!==t.dataset.id);
+    saveConfig(c).then(()=>{ closeSheet(); toast("Eliminato"); }).catch(err=>toast(errMsg(err)));
+  }
+  else if(a==="sport-del"){
+    const c=JSON.parse(JSON.stringify(cfg())); c.sport=c.sport.filter(s=>s!==t.dataset.v);
+    saveConfig(c).catch(err=>toast(errMsg(err)));
+  }
+});
+document.addEventListener("input", ev=>{
+  if(ev.target.id==="q"){ S.ui.q=ev.target.value; S.ui.limit=80; const pos=ev.target.selectionStart; render(); const q=$("#q"); if(q){ q.focus(); try{q.setSelectionRange(pos,pos);}catch(e){} } }
+});
+document.addEventListener("submit", ev=>{
+  if(ev.target.id==="f-sport"){
+    ev.preventDefault(); const inp=$("#sport-new"); const v=(inp.value||"").trim(); if(!v) return;
+    const c=JSON.parse(JSON.stringify(cfg())); if(!c.sport.some(s=>s.toLowerCase()===v.toLowerCase())) c.sport.push(v);
+    saveConfig(c).then(()=>toast("Sport aggiunto")).catch(err=>toast(errMsg(err)));
+  } else if(ev.target.id==="f-dates"){
+    ev.preventDefault();
+    const c=JSON.parse(JSON.stringify(cfg())); c.inizioSerio=$("#d-serio").value||null; c.inizioVolume=$("#d-vol").value||null;
+    saveConfig(c).then(()=>toast("Date salvate")).catch(err=>toast(errMsg(err)));
+  }
+});
+document.addEventListener("change", ev=>{ if(ev.target.id==="imp-file" && ev.target.files && ev.target.files[0]){ importBackup(ev.target.files[0]); ev.target.value=""; } });
+document.addEventListener("keydown", ev=>{ if(ev.key==="Escape" && $("#sheet").classList.contains("on")) closeSheet(); });
+let rz; window.addEventListener("resize", ()=>{ clearTimeout(rz); rz=setTimeout(()=>{ if(S.ui.view==="riepilogo") drawChart(); },150); });
+
+start();
+})();
+</script>
+</body>
+</html>
